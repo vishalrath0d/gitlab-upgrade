@@ -83,7 +83,7 @@ graph TD
 ### 1. Clone This Repository
 
 ```bash
-git clone https://github.com/vishal-rath0d/gitlab-upgrade.git
+git clone https://github.com/vishalrath0d/gitlab-upgrade.git
 cd gitlab-upgrade
 ```
 
@@ -337,8 +337,8 @@ DevOps Engineer | AWS | Kubernetes | Terraform
 
 - 📧 Email: [vishaljanusingrathod@gmail.com](mailto:vishaljanusingrathod@gmail.com)
 - 💼 LinkedIn: [linkedin.com/in/vishalrath0d](https://linkedin.com/in/vishalrath0d)
-- 🐙 GitHub: [github.com/vishalrath0d](https://github.com/vishal-rath0d)
-- 📝 Blog: [Read the full story on Hashnode](#) _(add your Hashnode link)_
+- 🐙 GitHub: [github.com/vishalrath0d](https://github.com/vishalrath0d)
+- 📝 Blog: [Read the full story on Hashnode](https://vishalrath0d.hashnode.dev/gitlab-upgrade)
 
 ---
 
