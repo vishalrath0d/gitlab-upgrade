@@ -337,7 +337,7 @@ DevOps Engineer | AWS | Kubernetes | Terraform
 
 - 📧 Email: [vishaljanusingrathod@gmail.com](mailto:vishaljanusingrathod@gmail.com)
 - 💼 LinkedIn: [linkedin.com/in/vishalrath0d](https://linkedin.com/in/vishalrath0d)
-- 🐙 GitHub: [github.com/vishal-rath0d](https://github.com/vishal-rath0d)
+- 🐙 GitHub: [github.com/vishalrath0d](https://github.com/vishal-rath0d)
 - 📝 Blog: [Read the full story on Hashnode](#) _(add your Hashnode link)_
 
 ---
