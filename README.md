@@ -1,4 +1,4 @@
-# GitLab Major Version Upgrade Guide
+# GitLab CE Major Version Upgrade Guide
 
 ![GitLab](https://img.shields.io/badge/GitLab-12.1.6%20→%2018.5.2-FC6D26?logo=gitlab&logoColor=white)
 ![Ubuntu](https://img.shields.io/badge/Ubuntu-16.04%20→%2020.04-E95420?logo=ubuntu&logoColor=white)
