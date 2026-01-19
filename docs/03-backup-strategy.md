@@ -359,7 +359,7 @@ Before each upgrade step:
 
 ---
 
-##Emergency Contacts
+## Emergency Contacts
 
 **If backup/restore fails:**
 - [AWS Support](https://aws.amazon.com/premiumsupport/)

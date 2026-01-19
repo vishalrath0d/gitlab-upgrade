@@ -89,7 +89,7 @@ gitlab-ctl status
 gitlab-rake gitlab:check SANITIZE=true
 
 # 7. Test operations
-git clone http://<gitlab-url>/test-repo.git
+git clone https://<gitlab-url>/test-repo.git
 ```
 
 ### Verification

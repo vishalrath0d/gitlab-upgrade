@@ -77,12 +77,11 @@ Use the official GitLab upgrade path tool:
 
 Based on instance size:
 
-| Repos   | Estimated Time per Major Version | Total for 6 Major Versions |
-| ------- | -------------------------------- | -------------------------- |
-| < 50    | 30-60 min                        | 3-6 hours                  |
-| 50-100  | 1-2 hours                        | 6-12 hours                 |
-| 100-250 | 2-4 hours                        | 12-24 hours                |
-| 250+    | 4-6 hours                        | 24-36 hours                |
+| Repos  | Estimated Time per Major Version | Total for 6 Major Versions |
+| ------ | -------------------------------- | -------------------------- |
+| < 50   | 30-60 min                        | 3-6 hours                  |
+| 50-100 | 1-2 hours                        | 6-12 hours                 |
+| 100+   | 2-4 hours                        | 12-24 hours                |
 
 **Add:**
 - OS upgrade time: 1-2 hours per upgrade
@@ -257,7 +256,7 @@ Define success criteria **before** starting:
 gitlab-rake gitlab:check SANITIZE=true
 
 # Test operations:
-git clone http://<gitlab>/test-repo.git
+git clone https://<gitlab-url>/test-repo.git
 cd test-repo
 touch test-file.txt
 git add . && git commit -m "Test" && git push

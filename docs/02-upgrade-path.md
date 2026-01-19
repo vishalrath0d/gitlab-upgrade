@@ -289,7 +289,7 @@ cat /opt/gitlab/version-manifest.txt | grep gitlab-ce
 gitlab-rake gitlab:check SANITIZE=true
 
 # 3. Test Git operations
-git clone http://<gitlab-url>/test-repo.git
+git clone https://<gitlab-url>/test-repo.git
 cd test-repo
 touch test.txt
 git add . && git commit -m "Post-upgrade test" && git push

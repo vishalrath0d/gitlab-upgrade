@@ -15,13 +15,36 @@ Based on real-world experience upgrading a production GitLab instance managing 1
 
 | Metric               | Value                                  |
 | -------------------- | -------------------------------------- |
-| **Starting Version** | GitLab CE 12.1.6 (July 2019)           |
+| **Starting Version** | GitLab CE 12.1.6 (August 2019)         |
 | **Target Version**   | GitLab CE 18.5.2 (Latest)              |
 | **Total Steps**      | 22 GitLab upgrades + 2 OS upgrades     |
-| **Execution Time**   | ~40 hours (one weekend: Fri-Mon)       |
+| **Execution Time**   | 40+ hours (one weekend: Fri-Mon)       |
 | **Repositories**     | 100+ repos with full history preserved |
 | **Data Loss**        | **Zero** ✅                             |
 | **Downtime**         | Minimal (maintenance windows only)     |
+
+---
+
+## 📚 Table of Contents
+
+### Documentation
+
+| Document                                                        | Description                                                                 |
+| --------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| **[01-planning.md](docs/01-planning.md)**                       | Pre-upgrade planning, prerequisites, risk assessment, and clone strategy    |
+| **[02-upgrade-path.md](docs/02-upgrade-path.md)**               | Complete step-by-step procedures for all 22 GitLab upgrades with commands   |
+| **[03-backup-strategy.md](docs/03-backup-strategy.md)**         | Backup layers (GitLab, config, AMI), restoration procedures, SSH key backup |
+| **[04-troubleshooting.md](docs/04-troubleshooting.md)**         | 9 common issues with solutions (Puma, migrations, disk, SSH keys)           |
+| **[05-rollback-procedures.md](docs/05-rollback-procedures.md)** | Emergency rollback options (version downgrade, AMI restore, backup restore) |
+
+### Automation Scripts
+
+| Script                                                       | Purpose                                                      | Usage                                        |
+| ------------------------------------------------------------ | ------------------------------------------------------------ | -------------------------------------------- |
+| **[backup.sh](scripts/backup.sh)**                           | Create comprehensive backups (GitLab data, config, SSH keys) | `./scripts/backup.sh`                        |
+| **[check-migrations.sh](scripts/check-migrations.sh)**       | Monitor background & batched migration status                | `./scripts/check-migrations.sh`              |
+| **[verify-health.sh](scripts/verify-health.sh)**             | Post-upgrade health check (services, DB, repos, Redis)       | `./scripts/verify-health.sh`                 |
+| **[cleanup-old-backups.sh](scripts/cleanup-old-backups.sh)** | Clean old backups while keeping recent ones                  | ` ./scripts/cleanup-old-backups.sh --keep 7` |
 
 ---
 
@@ -54,7 +77,7 @@ graph TD
     S --> T[17.3.7]
     T --> U[17.5.5]
     U --> V[17.8.7]
-    V --> W[17.11.7]
+   V --> W[17.11.7]
     W --> X[18.2.8]
     X --> Y[18.5.2<br/>Target]
     
@@ -102,7 +125,7 @@ Edition: CE
 
 ```bash
 # Run the backup script
-./scripts/backup.sh
+sudo ./scripts/backup.sh
 
 # Verify backups
 ls -lh /backup/gitlab-upgrade-$(date +%Y%m%d)/
@@ -112,90 +135,42 @@ ls -lh /backup/gitlab-upgrade-$(date +%Y%m%d)/
 
 Follow the detailed guide in [`docs/02-upgrade-path.md`](docs/02-upgrade-path.md).
 
-For each version step:
+**Standard workflow for each version:**
 
 ```bash
-# Stop services
+# 1. Stop services
 gitlab-ctl stop puma
 gitlab-ctl stop sidekiq
 
-# Install target version
-apt-get install gitlab-ce=<VERSION>
+# 2. Install target version
+apt-get install gitlab-ce=<VERSION>-ce.0
 
-# Reconfigure and restart
+# 3. Reconfigure and restart
 gitlab-ctl reconfigure
 gitlab-ctl restart
+sleep 180
 
-# Verify migrations complete
+# 4. Wait for migrations
 ./scripts/check-migrations.sh
-```
+# Must show: 0 for both migration types
 
----
-
-## 📚 Documentation
-
-| Document                                                    | Description                                      |
-| ----------------------------------------------------------- | ------------------------------------------------ |
-| [01-planning.md](docs/01-planning.md)                       | Pre-upgrade planning and risk assessment         |
-| [02-upgrade-path.md](docs/02-upgrade-path.md)               | Step-by-step upgrade procedures for all 22 steps |
-| [03-backup-strategy.md](docs/03-backup-strategy.md)         | Backup procedures and AMI snapshot creation      |
-| [04-troubleshooting.md](docs/04-troubleshooting.md)         | Common errors and their solutions                |
-| [05-rollback-procedures.md](docs/05-rollback-procedures.md) | How to safely rollback if something goes wrong   |
-
----
-
-## 🛠️ Scripts & Automation
-
-### [`scripts/backup.sh`](scripts/backup.sh)
-Automated backup script for GitLab data and configuration.
-
-```bash
-./scripts/backup.sh
-```
-
-### [`scripts/check-migrations.sh`](scripts/check-migrations.sh)
-Monitor background and batched migrations status.
-
-```bash
-./scripts/check-migrations.sh
-
-# Output:
-# === Background Migrations ===
-# 0
-#
-# === Batched Migrations (v14+) ===
-# 0
-```
-
-### [`scripts/verify-health.sh`](scripts/verify-health.sh)
-Comprehensive health check after each upgrade step.
-
-```bash
+# 5. Verify health
 ./scripts/verify-health.sh
-
-# Checks:
-# ✓ GitLab version
-# ✓ All services running
-# ✓ Database migrations
-# ✓ Repository integrity
-# ✓ Redis connectivity
 ```
 
-### [`scripts/cleanup-old-backups.sh`](scripts/cleanup-old-backups.sh)
-Remove old backups while keeping critical snapshots.
-
-```bash
-./scripts/cleanup-old-backups.sh --keep 7
-```
+Repeat for all 22 GitLab versions + 2 OS upgrades.
 
 ---
 
 ## ⚠️ Critical Lessons Learned
 
-### 1. **Never Skip Versions**
+### 1. **Clone First, Upgrade Later**
+Work on an AMI clone, not production. Instant rollback capability if needed. See: [`docs/01-planning.md`](docs/01-planning.md)
+
+### 2. **Never Skip Versions**
 GitLab's background migrations are sequential. Skipping versions will corrupt your database.
 
-### 2. **Wait for Migrations to Complete**
+### 3. **Wait for Migrations to Complete**
 Both background and batched migrations must reach **zero** before proceeding:
 
 ```bash
@@ -203,84 +178,94 @@ gitlab-rails runner "puts Gitlab::BackgroundMigration.remaining"
 # Must output: 0
 
 gitlab-rails runner "puts Gitlab::Database::BackgroundMigration::BatchedMigration.queued.count"
-# Must output: 0
+# Must output: 0 (for v14+)
 ```
 
-### 3. **Disk Space Will Kill You**
-Each upgrade creates an 8GB+ backup. Monitor disk space:
+### 4. **Copy SSH Host Keys from Old Instance**
+If using AMI clone strategy, preserve SSH identity to avoid breaking Jenkins/CI/CD. See: [`docs/04-troubleshooting.md#9`](docs/04-troubleshooting.md#9-ssh-host-key-changed-jenkins-fails)
+
+```bash
+# On old instance
+sudo tar -czf /tmp/ssh_host_keys.tar.gz /etc/ssh/ssh_host_*
+
+# Copy to new instance and restore
+sudo tar -xzf /tmp/ssh_host_keys.tar.gz -C /
+sudo systemctl restart ssh
+```
+
+### 5. **Disk Space Will Kill You**
+Each upgrade creates an 8GB+ backup. Monitor obsessively:
 
 ```bash
 df -h
-# Keep at least 20-30% free on /var
+# Keep at least 30% free on /var
+
+# Clean old backups if needed
+./scripts/cleanup-old-backups.sh --keep 5
 ```
 
-### 4. **Create AMI Snapshots Before OS Upgrades**
-Ubuntu upgrades (16→18→20) can fail. Always have a snapshot:
+### 6. **Boost IOPS/Throughput**
+Background migrations are I/O-bound. Increase EBS IOPS from 3000 to 16000 and throughput to 1000 MB/s. Saves 30-40% time on large instances.
 
-```bash
-aws ec2 create-image \
-  --instance-id i-xxxxx \
-  --name "gitlab-backup-$(date +%Y%m%d)" \
-  --no-reboot
-```
-
-### 5. **Budget Time for Large Instances**
+### 7. **Budget Time for Large Instances**
 With 100+ repos:
 - Minor version upgrades: 30-60 minutes
 - Major version upgrades: 2-4 hours (background migrations)
 - OS upgrades: 1-2 hours
 
+**Total: 40+ hours for full v12→v18 upgrade**
+
 ---
 
-## 🐛 Common Issues & Fixes
+## 🐛 Common Issues & Quick Fixes
 
-### Issue: Puma Port Conflict (v13.0.14)
+| Issue                    | Version   | Quick Fix                                                      |
+| ------------------------ | --------- | -------------------------------------------------------------- |
+| **Puma port conflict**   | 13.0.14   | Set `puma['port'] = 8085` in `/etc/gitlab/gitlab.rb`           |
+| **crond --no-auto flag** | 14.0.12   | Remove `--no-auto` from `/opt/gitlab/sv/crond/run`             |
+| **Migrations stuck**     | 14+       | Restart Sidekiq: `gitlab-ctl restart sidekiq`                  |
+| **Disk full**            | Any       | Clean old backups: `./scripts/cleanup-old-backups.sh --keep 5` |
+| **gitaly deprecation**   | 16.0+     | Comment out `gitaly['custom_hooks_dir']` in config             |
+| **SSH key mismatch**     | AMI clone | Copy `/etc/ssh/ssh_host_*` from old instance                   |
 
-**Error:**
-```
-Puma failed to bind to 127.0.0.1:8080
-```
+**See [`docs/04-troubleshooting.md`](docs/04-troubleshooting.md) for detailed solutions.**
 
-**Fix:** Edit `/etc/gitlab/gitlab.rb`:
-```ruby
-puma['listen'] = '127.0.0.1'
-puma['port'] = 8085
-gitlab_workhorse['auth_backend'] = "http://localhost:8085"
-```
+---
 
-Then:
+## 🛠️ Script Details
+
+### backup.sh
+Creates timestamped backups of:
+- GitLab data (repositories, database, uploads)
+- Configuration files (`/etc/gitlab/`)
+- SSH host keys (`/etc/ssh/ssh_host_*`)
+
+**Output:** `/backup/gitlab-upgrade-YYYYMMDD/`
+
+### check-migrations.sh
+Monitors both legacy and batched background migrations. Color-coded output:
+- ✅ Green: All migrations complete (0)
+- ⚠️ Yellow: Migrations pending
+- ❌ Red: Migration errors
+
+**Exit code:** 0 if complete, 1 if pending
+
+### verify-health.sh
+Comprehensive health check:
+- GitLab version verification
+- Service status (Puma, Sidekiq, PostgreSQL, Redis)
+- Database migration status
+- Repository integrity (fsck)
+- API connectivity
+
+### cleanup-old-backups.sh
+Safe backup cleanup with dry-run mode:
 ```bash
-gitlab-ctl reconfigure && gitlab-ctl restart
+./scripts/cleanup-old-backups.sh --keep 7 --dry-run  # Preview
+./scripts/cleanup-old-backups.sh --keep 7             # Execute
 ```
 
-### Issue: Background Migrations Stuck
-
-**Fix:**
-```bash
-# Check Sidekiq status
-gitlab-ctl status sidekiq
-
-# Restart if needed
-gitlab-ctl restart sidekiq
-
-# Monitor progress
-watch -n 60 './scripts/check-migrations.sh'
-```
-
-### Issue: Disk Full During Upgrade
-
-**Fix:**
-```bash
-cd /var/opt/gitlab/backups/
-ls -ltrh | tail -20
-
-# Remove old backups (keep last 3-4)
-rm -f <old-backup-tar-files>
-
-df -h  # Verify space freed
-```
-
-See [`docs/04-troubleshooting.md`](docs/04-troubleshooting.md) for the complete list.
+Keeps specified number of most recent backups, removes older ones.
 
 ---
 
@@ -313,7 +298,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- [Official GitLab Upgrade Documentation](https://docs.gitlab.com/ee/update/)
+- [Official GitLab Upgrade Documentation](https://docs.gitlab.com/update/)
 - [GitLab Upgrade Path Tool](https://gitlab-com.gitlab.io/support/toolbox/upgrade-path/)
 - [GitLab Community Forums](https://forum.gitlab.com/)
 
@@ -342,4 +327,4 @@ DevOps Engineer | AWS | Kubernetes | Terraform
 
 ---
 
-**Built with ❤️ by someone who spent 40 hours in terminal hell so you don't have to.**
+**Built with ❤️ by someone who spent 40+ hours in terminal hell so you don't have to.**

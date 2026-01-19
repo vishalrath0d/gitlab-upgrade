@@ -6,6 +6,12 @@ Common issues encountered during GitLab major version upgrades and their solutio
 
 ## Quick Reference
 
+| Issue                       | Version(s)          | Section                                         |
+| --------------------------- | ------------------- | ----------------------------------------------- |
+| Puma port conflict          | 13.0.14             | [#1](#1-puma-port-conflict-v13014)              |
+| crond --no-auto flag        | 14.0.12             | [#2](#2-crond-unknown-flag-no-auto-v14012)      |
+| Background migrations stuck | 14+                 | [#3](#3-background-migrations-stuck)            |
+| Disk space full             | Any                 | [#4](#4-disk-space-full-during-upgrade)         |
 | gitaly config deprecation   | 15.10+, 16.0+       | [#5](#5-gitaly-configuration-deprecation-v1600) |
 | Upload permissions          | 13.0.14             | [#6](#6-upload-permission-errors)               |
 | Postgres connectivity       | Any                 | [#7](#7-postgresql-connection-issues)           |
@@ -294,7 +300,7 @@ gitlab-ctl reconfigure
 ```
 gitaly['custom_hooks_dir'] has been deprecated since 15.10 
 and was removed in 16.0. 
-See: https://docs.gitlab.com/ee/update/#15100
+See: https://docs.gitlab.com/update/#15100
 ```
 
 ### Solution
@@ -711,11 +717,11 @@ If you encounter issues not covered here:
    - Search for your specific error message
 
 4. **Official documentation:**
-   - https://docs.gitlab.com/ee/update/
-   - https://docs.gitlab.com/ee/update/background_migrations.html
+   - https://docs.gitlab.com/update
+   - https://docs.gitlab.com/update/background_migrations
 
 5. **Open an issue:**
-   - GitHub: https://github.com/vishal-rath0d/gitlab-upgrade/issues
+   - GitHub: https://github.com/vishalrath0d/gitlab-upgrade/issues
    - Include: GitLab version, error logs, steps taken
 
 ---
