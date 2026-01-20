@@ -91,6 +91,8 @@ graph TD
 
 ## 🚀 Quick Start
 
+> **📖 First Time?** Start with [`docs/01-planning.md`](docs/01-planning.md) for comprehensive planning, risk assessment, and infrastructure preparation.
+
 ### Prerequisites
 
 - Ubuntu 16.04/18.04/20.04 server
@@ -99,7 +101,7 @@ graph TD
 - At least **30% free disk space** on `/var` partition
 - AWS CLI (for AMI backups) or alternative snapshot mechanism
 
-> **💡 Pro Tip**: Work on a **cloned instance** (AMI snapshot), not production. This guide assumes you've created an EC2 AMI of your production GitLab and launched a new instance for the upgrade.
+> **💡 Pro Tip**: Work on a **cloned instance** (AMI snapshot), not production. This guide assumes you've created an EC2 AMI of your production GitLab and launched a new instance for the upgrade. See [`docs/01-planning.md`](docs/01-planning.md) for clone strategy details.
 
 > **⚡ Performance Tip**: Increase EBS IOPS (16000+) and throughput (1000 MB/s) before starting. Background migrations are I/O-intensive and this can cut migration time by 30-40%.
 
@@ -123,17 +125,19 @@ Edition: CE
 
 ### 3. Create Initial Backups
 
+> **📖 Read First:** [`docs/03-backup-strategy.md`](docs/03-backup-strategy.md) explains the 3-layer backup strategy and why each layer matters.
+
 ```bash
-# Run the backup script
+# Run the comprehensive backup script
 sudo ./scripts/backup.sh
 
-# Verify backups
+# Verify backups were created
 ls -lh /backup/gitlab-upgrade-$(date +%Y%m%d)/
 ```
 
 ### 4. Start Upgrading
 
-Follow the detailed guide in [`docs/02-upgrade-path.md`](docs/02-upgrade-path.md).
+> **📖 Complete Guide:** Follow [`docs/02-upgrade-path.md`](docs/02-upgrade-path.md) for all 22 GitLab version upgrades with detailed commands and version-specific fixes.
 
 **Standard workflow for each version:**
 
@@ -160,6 +164,10 @@ sleep 180
 
 Repeat for all 22 GitLab versions + 2 OS upgrades.
 
+> **⚠️ Hit an Issue?** Check [`docs/04-troubleshooting.md`](docs/04-troubleshooting.md) for 9 common problems and solutions.
+
+> **🔄 Need to Rollback?** See [`docs/05-rollback-procedures.md`](docs/05-rollback-procedures.md) for emergency recovery procedures.
+
 ---
 
 ## ⚠️ Critical Lessons Learned
@@ -171,9 +179,13 @@ Work on an AMI clone, not production. Instant rollback capability if needed. See
 GitLab's background migrations are sequential. Skipping versions will corrupt your database.
 
 ### 3. **Wait for Migrations to Complete**
-Both background and batched migrations must reach **zero** before proceeding:
+Both background and batched migrations must reach **zero** before proceeding. Use [`scripts/check-migrations.sh`](scripts/check-migrations.sh) to monitor:
 
 ```bash
+# Automated monitoring (recommended)
+./scripts/check-migrations.sh
+
+# Or manual checks
 gitlab-rails runner "puts Gitlab::BackgroundMigration.remaining"
 # Must output: 0
 
@@ -194,7 +206,7 @@ sudo systemctl restart ssh
 ```
 
 ### 5. **Disk Space Will Kill You**
-Each upgrade creates an 8GB+ backup. Monitor obsessively:
+Each upgrade creates an 8GB+ backup. Monitor obsessively. Use [`scripts/cleanup-old-backups.sh`](scripts/cleanup-old-backups.sh) for safe cleanup:
 
 ```bash
 df -h
@@ -203,6 +215,8 @@ df -h
 # Clean old backups if needed
 ./scripts/cleanup-old-backups.sh --keep 5
 ```
+
+> **📖 Full Strategy:** See [`docs/03-backup-strategy.md`](docs/03-backup-strategy.md) for backup retention policies and disk space management.
 
 ### 6. **Boost IOPS/Throughput**
 Background migrations are I/O-bound. Increase EBS IOPS from 3000 to 16000 and throughput to 1000 MB/s. Saves 30-40% time on large instances.
@@ -234,6 +248,8 @@ With 100+ repos:
 
 ## 🛠️ Script Details
 
+> **📖 Related Docs:** Scripts complement the procedures in [`docs/02-upgrade-path.md`](docs/02-upgrade-path.md) and [`docs/03-backup-strategy.md`](docs/03-backup-strategy.md).
+
 ### backup.sh
 Creates timestamped backups of:
 - GitLab data (repositories, database, uploads)
@@ -242,13 +258,21 @@ Creates timestamped backups of:
 
 **Output:** `/backup/gitlab-upgrade-YYYYMMDD/`
 
+**Usage:** `sudo ./scripts/backup.sh`
+
+> **📖 Learn More:** [`docs/03-backup-strategy.md`](docs/03-backup-strategy.md) explains the 3-layer backup approach and restoration procedures.
+
 ### check-migrations.sh
 Monitors both legacy and batched background migrations. Color-coded output:
 - ✅ Green: All migrations complete (0)
 - ⚠️ Yellow: Migrations pending
 - ❌ Red: Migration errors
 
+**Usage:** `./scripts/check-migrations.sh`
+
 **Exit code:** 0 if complete, 1 if pending
+
+> **📖 Migration Guide:** [`docs/02-upgrade-path.md`](docs/02-upgrade-path.md) explains when and how to use this during upgrades.
 
 ### verify-health.sh
 Comprehensive health check:
@@ -258,6 +282,10 @@ Comprehensive health check:
 - Repository integrity (fsck)
 - API connectivity
 
+**Usage:** `./scripts/verify-health.sh`
+
+> **📖 Troubleshooting:** If health checks fail, see [`docs/04-troubleshooting.md`](docs/04-troubleshooting.md) for solutions.
+
 ### cleanup-old-backups.sh
 Safe backup cleanup with dry-run mode:
 ```bash
@@ -266,6 +294,8 @@ Safe backup cleanup with dry-run mode:
 ```
 
 Keeps specified number of most recent backups, removes older ones.
+
+> **📖 Retention Policy:** [`docs/03-backup-strategy.md`](docs/03-backup-strategy.md) provides recommended retention policies for different backup types.
 
 ---
 
